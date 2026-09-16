@@ -31,6 +31,35 @@
   --color-content: hsl(
     var(--theme-hue) var(--theme-saturation) var(--content-lightness)
   );
+  /* Structural separators: use border-stroke, divide-stroke, or bg-stroke. */
+  --color-stroke: color-mix(in srgb, var(--color-content) 7%, transparent);
+  /* Interactive fills keep their dark-theme contrast but use gentler ink in
+     light mode. Prefer these over content opacity for selected/raised UI. */
+  --color-selection-subtle: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-subtle-strength),
+    transparent
+  );
+  --color-selection: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strength),
+    transparent
+  );
+  --color-selection-strong: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strong-strength),
+    transparent
+  );
+  --color-selection-hover: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-hover-strength),
+    transparent
+  );
+  --color-selection-emphasis: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-emphasis-strength),
+    transparent
+  );
   --color-accent: hsl(211 92% 62%);
   --color-skill: #e8c547;
   --color-mention: #38bdf8;
@@ -52,6 +81,11 @@
   --sidebar-opacity: 0.85;
   --chat-background-empty-opacity: 0.24;
   --chat-background-session-opacity: 0.24;
+  --selection-subtle-strength: 8%;
+  --selection-strength: 10%;
+  --selection-strong-strength: 12%;
+  --selection-hover-strength: 15%;
+  --selection-emphasis-strength: 20%;
   --background-lightness: var(--theme-dark-lightness);
   --content-lightness: 92%;
   --link-color: #7dd3fc;
@@ -71,6 +105,11 @@ html.theme-light {
   --color-skill: #a07c10;
   --color-mention: #0284c7;
   --color-markdown-heading: #be185d;
+  --selection-subtle-strength: 5%;
+  --selection-strength: 6%;
+  --selection-strong-strength: 7%;
+  --selection-hover-strength: 10%;
+  --selection-emphasis-strength: 14%;
   color-scheme: light;
 }
 
@@ -374,26 +413,41 @@ html.theme-light [data-composer-box] {
     0 2px 6px color-mix(in srgb, var(--color-content) 6%, transparent);
 }
 
-html.theme-light .composer-send:not(:disabled) {
+/* Solid primary actions share the composer submit treatment. */
+.primary-action:not(:disabled) {
+  background: white;
+  color: black;
+}
+
+.primary-action:not(:disabled):hover {
+  background: color-mix(in srgb, white 90%, transparent);
+}
+
+.primary-action:disabled {
+  background: color-mix(in srgb, white 30%, transparent);
+  color: color-mix(in srgb, black 40%, transparent);
+}
+
+html.theme-light .primary-action:not(:disabled) {
   background: var(--color-content);
   color: var(--color-background-base);
 }
 
-html.theme-light .composer-send:not(:disabled):hover {
+html.theme-light .primary-action:not(:disabled):hover {
   background: color-mix(in srgb, var(--color-content) 90%, transparent);
 }
 
-html.theme-light .composer-send:disabled {
+html.theme-light .primary-action:disabled {
   background: color-mix(in srgb, var(--color-content) 25%, transparent);
   color: color-mix(in srgb, var(--color-background-base) 75%, transparent);
 }
 
-html.has-user-accent .composer-send:not(:disabled) {
+html.has-user-accent .primary-action:not(:disabled) {
   background: var(--user-accent-color);
   color: var(--user-accent-foreground);
 }
 
-html.has-user-accent .composer-send:not(:disabled):hover {
+html.has-user-accent .primary-action:not(:disabled):hover {
   background: color-mix(
     in srgb,
     var(--user-accent-color) 88%,
@@ -401,7 +455,7 @@ html.has-user-accent .composer-send:not(:disabled):hover {
   );
 }
 
-html.has-user-accent .composer-send:disabled {
+html.has-user-accent .primary-action:disabled {
   background: color-mix(in srgb, var(--user-accent-color) 28%, transparent);
   color: color-mix(in srgb, var(--color-content) 35%, transparent);
 }

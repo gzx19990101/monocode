@@ -15,6 +15,7 @@ const files = [
   "src/chrome/RemoveProjectDialog.tsx",
   "src/chrome/MenuBar.tsx",
   "src/chrome/Sidebar.tsx",
+  "src/chrome/SearchableProjectPicker.tsx",
   "src/chrome/Composer.tsx",
   "src/lib/harness/availability.ts",
 ];

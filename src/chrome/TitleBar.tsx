@@ -318,7 +318,7 @@ function TitleTabItem({
           closable ? "pr-7" : "pr-2.5"
         } ${
           active
-            ? "bg-content/10 text-content"
+            ? "bg-selection text-content"
             : "text-content/50 hover:bg-content/5 hover:text-content"
         }`}
       >
@@ -811,7 +811,7 @@ function TitleBarComponent({
   // exempts buttons, links and inputs on its own.
   return (
     <header
-      className="flex h-10 shrink-0 select-none items-stretch border-b border-content/10"
+      className="flex h-10 shrink-0 select-none items-stretch border-b border-stroke"
       data-tauri-drag-region="deep"
     >
       {/* Both the rail and the sidebar step aside without a project, so the
@@ -846,7 +846,7 @@ function TitleBarComponent({
 
       <div
         className={`flex min-w-0 flex-1 items-stretch${
-          showProjectButton ? " border-l border-content/10" : ""
+          showProjectButton ? " border-l border-stroke" : ""
         }`}
       >
         <div
