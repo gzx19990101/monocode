@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { saveLanguage } from "./i18n";
+import { saveLanguage } from "../../../shared/lib/i18n";
 import {
   COMPOSER_RUNNER_DEFAULT,
   COLLAPSED_PROJECT_RAIL_MODE_DEFAULT,
