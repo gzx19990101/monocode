@@ -25,7 +25,7 @@ Actions, with the JSON object each one takes:
             One task, including its latest result.
   wait      {"timeoutSeconds":20}
             Block until a task changes state, or until the timeout (0-25).
-            Returns at once when nothing is running or queued.
+            Returns at once when paused, stopped, or nothing is running or queued.
   respond   {"taskId":"...","requestId":7,"decision":"allow"|"deny"}
             Answer an approval an agent is blocked on. Agents never prompt the
             user; list, get and wait report the prompt as that task's
@@ -38,8 +38,11 @@ Actions, with the JSON object each one takes:
             work it has already done. Use this the moment you see it going
             the wrong way; message only lands once it has stopped.
   message   {"taskId":"...","text":"..."}
-            Send a completed or failed worker another turn; it keeps its
-            session, scope and history.
+            Send a stopped worker another turn within its existing scope; it
+            keeps its session, checkout and history.
+  retry     {"taskId":"...","text":"...","files":["src/feature"]}
+            Retry a stopped worker with corrected project-relative write
+            scopes. Use this only when the additional files are required.
   cancel    {"taskId":"..."}
             Cancel a task, whether it is running or still queued.
   review    {"taskId":"..."}
@@ -50,6 +53,12 @@ Actions, with the JSON object each one takes:
 Usual loop: list -> delegate ... -> wait or get -> steer an agent that drifts,
 unblock one with respond or answer -> inspect the changes yourself -> message
 for corrections -> review each task -> finish.
+
+When paused, list, get and wait still return the reason and recovery steps.
+Do not keep polling or retry mutations. Explain the pause and ask the user to
+click Resume in MonoCode. Resume continues interrupted workers in their
+retained checkouts. A policy-blocked worker remains stopped until message,
+retry or cancel explicitly resolves it.
 
 Output is one JSON line: {"ok":true,"result":...} or {"ok":false,"error":"..."}.
 The exit code is 0 only when "ok" is true.
@@ -69,9 +78,9 @@ MonoCode sets MONOCODE_CONTROL_ENDPOINT and MONOCODE_CONTROL_TOKEN for the lead
 agent's process only. They are already in your environment; never print them.
 "#;
 
-const ACTIONS: [&str; 11] = [
-    "list", "delegate", "get", "steer", "message", "cancel", "wait", "review", "finish", "respond",
-    "answer",
+const ACTIONS: [&str; 12] = [
+    "list", "delegate", "get", "steer", "message", "retry", "cancel", "wait", "review", "finish",
+    "respond", "answer",
 ];
 
 /// Quote for the shell the lead agent actually runs commands in, and only when

@@ -1,23 +1,23 @@
 import fs from "node:fs";
 
 /**
- * Guards the gettext-style table in `src/lib/i18n.ts`: every English literal
- * passed to `t()` must have a Chinese entry, or the string silently renders in
- * English. Run with `node scripts/check-i18n-keys.mjs`.
+ * Guards the gettext-style table in `src/shared/lib/i18n.ts`: every English
+ * literal passed to `t()` must have a Chinese entry, or the string silently
+ * renders in English. Run with `node scripts/check-i18n-keys.mjs`.
  */
 
-const SOURCE = "src/lib/i18n.ts";
+const SOURCE = "src/shared/lib/i18n.ts";
 
 const files = [
-  "src/surfaces/SettingsView.tsx",
-  "src/chrome/TitleBar.tsx",
-  "src/chrome/SettingsRail.tsx",
-  "src/chrome/RemoveProjectDialog.tsx",
-  "src/chrome/MenuBar.tsx",
-  "src/chrome/Sidebar.tsx",
-  "src/chrome/SearchableProjectPicker.tsx",
-  "src/chrome/Composer.tsx",
-  "src/lib/harness/availability.ts",
+  "src/features/settings/ui/SettingsView.tsx",
+  "src/app/shell/TitleBar.tsx",
+  "src/app/shell/SettingsRail.tsx",
+  "src/features/projects/ui/RemoveProjectDialog.tsx",
+  "src/app/shell/MenuBar.tsx",
+  "src/app/shell/Sidebar.tsx",
+  "src/features/projects/ui/SearchableProjectPicker.tsx",
+  "src/features/sessions/ui/Composer.tsx",
+  "src/integrations/harness/core/availability.ts",
 ];
 
 /** Keys in the ZH table, quoted or bare. Duplicates are reported, not merged. */

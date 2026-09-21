@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
@@ -32,6 +32,7 @@ struct Inner {
     grants: HashMap<String, Grant>,
     pending: HashMap<String, Pending>,
     workers: HashMap<String, String>,
+    scratch: HashMap<String, PathBuf>,
     active: HashMap<String, ActiveTurn>,
 }
 impl Inner {
@@ -63,6 +64,7 @@ impl Inner {
         let ids = self.window_sessions(label);
         self.grants.retain(|id, _| !ids.contains(id));
         self.workers.retain(|id, _| !ids.contains(id));
+        self.scratch.retain(|id, _| !ids.contains(id));
         self.active.retain(|id, _| !ids.contains(id));
         self.pending.retain(|_, pending| {
             if pending.window != label {
@@ -83,6 +85,16 @@ pub struct ControlHost {
 
 fn paths_overlap(a: &str, b: &str) -> bool {
     a == b || a.starts_with(&format!("{b}/")) || b.starts_with(&format!("{a}/"))
+}
+
+/** Windows paths compare case-insensitively; POSIX paths must retain case. */
+fn comparison_path(path: &Path) -> String {
+    let value = path.to_string_lossy().replace('\\', "/");
+    if cfg!(windows) {
+        value.to_lowercase()
+    } else {
+        value
+    }
 }
 
 #[derive(Deserialize)]
@@ -215,7 +227,7 @@ pub fn control_enable(
     if !cwd.is_dir() {
         return Err("Choose a project folder first".into());
     }
-    let cwd = cwd.to_string_lossy().replace('\\', "/").to_lowercase();
+    let cwd = comparison_path(&cwd);
     let mut inner = host
         .inner
         .lock()
@@ -268,6 +280,8 @@ pub fn control_disable(
     {
         inner.grants.remove(&session_id);
         inner.workers.retain(|_, parent| parent != &session_id);
+        let workers = inner.workers.clone();
+        inner.scratch.retain(|id, _| workers.contains_key(id));
     }
     Ok(())
 }
@@ -278,7 +292,7 @@ pub fn control_attach_worker(
     host: State<'_, ControlHost>,
     lead_id: String,
     session_id: String,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let mut inner = host
         .inner
         .lock()
@@ -290,8 +304,33 @@ pub fn control_attach_worker(
     {
         return Err("Lead connection is inactive".into());
     }
-    inner.workers.insert(session_id, lead_id);
-    Ok(())
+    let scratch = match inner.scratch.get(&session_id) {
+        Some(path) if path.is_dir() => path.clone(),
+        _ => create_worker_scratch()?,
+    };
+    inner.workers.insert(session_id.clone(), lead_id);
+    inner.scratch.insert(session_id, scratch.clone());
+    Ok(scratch.to_string_lossy().into_owned())
+}
+
+fn create_worker_scratch() -> Result<PathBuf, String> {
+    let path = std::env::temp_dir().join(format!("monocode-worker-{}", uuid::Uuid::new_v4()));
+    let builder = std::fs::DirBuilder::new();
+    #[cfg(unix)]
+    let builder = {
+        use std::os::unix::fs::DirBuilderExt;
+        let mut builder = builder;
+        builder.mode(0o700);
+        builder
+    };
+    builder.create(&path).map_err(|e| e.to_string())?;
+    std::fs::canonicalize(path).map_err(|e| e.to_string())
+}
+
+fn configure_worker_scratch(cmd: &mut Command, path: &Path) {
+    // Native temp-file helpers and shell mktemp use the same private scope
+    // that is named in the worker's assignment prompt.
+    cmd.env("TMPDIR", path).env("TMP", path).env("TEMP", path);
 }
 
 #[tauri::command]
@@ -301,11 +340,8 @@ pub fn control_authorize_turn(
     session_id: String,
     cwd: String,
 ) -> Result<(), String> {
-    let cwd = std::fs::canonicalize(crate::fs::expand_home(&cwd))
-        .map_err(|e| e.to_string())?
-        .to_string_lossy()
-        .replace('\\', "/")
-        .to_lowercase();
+    let cwd = std::fs::canonicalize(crate::fs::expand_home(&cwd)).map_err(|e| e.to_string())?;
+    let cwd = comparison_path(&cwd);
     let mut inner = host
         .inner
         .lock()
@@ -362,6 +398,9 @@ pub fn configure_child(app: &AppHandle, session_id: &str, cmd: &mut Command) {
         if let Some(grant) = inner.grants.get(session_id) {
             cmd.env("MONOCODE_CONTROL_ENDPOINT", &host.endpoint)
                 .env("MONOCODE_CONTROL_TOKEN", &grant.token);
+        }
+        if let Some(scratch) = inner.scratch.get(session_id) {
+            configure_worker_scratch(cmd, scratch);
         }
     };
 }
@@ -447,7 +486,37 @@ fn resolve_scope(root: &Path, value: &str) -> Result<String, String> {
     for part in missing.into_iter().rev() {
         existing.push(part);
     }
-    Ok(existing.to_string_lossy().replace('\\', "/").to_lowercase())
+    Ok(comparison_path(&existing))
+}
+
+/// Resolve reported writes as well as scopes: aliases and symlinks must not
+/// turn a private scratch directory into an exemption for another worker's files.
+#[tauri::command]
+pub fn control_write_path(path: String) -> Result<String, String> {
+    let path = Path::new(&path);
+    if !path.is_absolute() {
+        return Err("Reported write paths must be absolute".into());
+    }
+    let mut existing = path;
+    let mut missing = Vec::new();
+    while !existing.exists() {
+        // A dangling symlink cannot be treated as a new ordinary file.
+        if std::fs::symlink_metadata(existing).is_ok() {
+            return Err("Reported write path contains a dangling symlink".into());
+        }
+        missing.push(
+            existing
+                .file_name()
+                .ok_or("Invalid write path")?
+                .to_os_string(),
+        );
+        existing = existing.parent().ok_or("Invalid write path")?;
+    }
+    let mut resolved = std::fs::canonicalize(existing).map_err(|e| e.to_string())?;
+    for part in missing.into_iter().rev() {
+        resolved.push(part);
+    }
+    Ok(resolved.to_string_lossy().replace('\\', "/"))
 }
 
 #[tauri::command]
@@ -467,6 +536,67 @@ pub fn control_scopes(cwd: String, files: Vec<String>) -> Result<Vec<String>, St
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(windows))]
+    #[test]
+    fn comparison_keys_preserve_posix_case() {
+        assert_eq!(comparison_path(Path::new("/tmp/Foo")), "/tmp/Foo");
+        assert_ne!(
+            comparison_path(Path::new("/tmp/Foo")),
+            comparison_path(Path::new("/tmp/foo"))
+        );
+    }
+
+    #[test]
+    fn workers_get_distinct_private_scratch_and_matching_temp_environment() {
+        let first = create_worker_scratch().unwrap();
+        let second = create_worker_scratch().unwrap();
+        assert_ne!(first, second);
+        assert!(first.is_absolute());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(
+                std::fs::metadata(&first).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+        }
+        let mut cmd = Command::new("unused");
+        configure_worker_scratch(&mut cmd, &first);
+        for key in ["TMPDIR", "TMP", "TEMP"] {
+            assert!(cmd
+                .get_envs()
+                .any(|(name, value)| name == key && value == Some(first.as_os_str())));
+        }
+        let new_file = first.join("new/helper.py");
+        assert_eq!(
+            control_write_path(new_file.to_string_lossy().into_owned()).unwrap(),
+            new_file.to_string_lossy().replace('\\', "/")
+        );
+        assert!(control_write_path("relative.py".into()).is_err());
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&second, first.join("escape")).unwrap();
+            let resolved = control_write_path(
+                first
+                    .join("escape/helper.py")
+                    .to_string_lossy()
+                    .into_owned(),
+            )
+            .unwrap();
+            assert_eq!(resolved, second.join("helper.py").to_string_lossy());
+            std::os::unix::fs::symlink(first.join("missing"), first.join("dangling")).unwrap();
+            assert!(control_write_path(
+                first
+                    .join("dangling/helper.py")
+                    .to_string_lossy()
+                    .into_owned()
+            )
+            .is_err());
+        }
+        std::fs::remove_dir_all(first).unwrap();
+        std::fs::remove_dir_all(second).unwrap();
+    }
+
     #[test]
     fn closing_a_window_releases_ordinary_turns_and_owned_orchestration() {
         let mut inner = Inner::default();

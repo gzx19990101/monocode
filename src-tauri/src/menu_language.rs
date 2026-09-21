@@ -81,6 +81,7 @@ pub struct Labels {
     pub open_project: &'static str,
     pub open_search: &'static str,
     pub go_to_file: &'static str,
+    pub command_palette: &'static str,
     pub find_in_project: &'static str,
     pub new_tab: &'static str,
     pub new_terminal: &'static str,
@@ -107,6 +108,7 @@ pub struct Labels {
     pub zoom_in: &'static str,
     pub zoom_out: &'static str,
     pub zoom_reset: &'static str,
+    pub reload: &'static str,
     pub sidebar_appearance: &'static str,
 }
 
@@ -134,6 +136,7 @@ pub const EN: Labels = Labels {
     open_project: "Open Project…",
     open_search: "Search…",
     go_to_file: "Go to File…",
+    command_palette: "Command Palette…",
     find_in_project: "Find in Files…",
     new_tab: "New Tab",
     new_terminal: "New Terminal",
@@ -159,12 +162,13 @@ pub const EN: Labels = Labels {
     zoom_in: "Zoom In",
     zoom_out: "Zoom Out",
     zoom_reset: "Reset Zoom",
+    reload: "Reload",
     sidebar_appearance: "Sidebar Appearance…",
 };
 
-/// Kept in step with the ZH table in `src/lib/i18n.ts`: the same English source
-/// string maps to the same translation, so the macOS menu bar and the in-app
-/// menu bar (Windows/Linux) read alike.
+/// Kept in step with the ZH table in `src/shared/lib/i18n.ts`: the same English
+/// source string maps to the same translation, so the macOS menu bar and the
+/// in-app menu bar (Windows/Linux) read alike.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub const ZH: Labels = Labels {
     file: "文件",
@@ -189,6 +193,7 @@ pub const ZH: Labels = Labels {
     open_project: "打开项目…",
     open_search: "搜索…",
     go_to_file: "前往文件…",
+    command_palette: "命令面板…",
     find_in_project: "在文件中查找…",
     new_tab: "新建标签页",
     new_terminal: "新建终端",
@@ -214,6 +219,7 @@ pub const ZH: Labels = Labels {
     zoom_in: "放大",
     zoom_out: "缩小",
     zoom_reset: "重置缩放",
+    reload: "重新加载",
     sidebar_appearance: "侧边栏外观…",
 };
 
@@ -281,6 +287,7 @@ mod tests {
             open_project,
             open_search,
             go_to_file,
+            command_palette,
             find_in_project,
             new_tab,
             new_terminal,
@@ -306,6 +313,7 @@ mod tests {
             zoom_in,
             zoom_out,
             zoom_reset,
+            reload,
             sidebar_appearance,
         } = ZH;
 
@@ -332,6 +340,7 @@ mod tests {
             (EN.open_project, open_project),
             (EN.open_search, open_search),
             (EN.go_to_file, go_to_file),
+            (EN.command_palette, command_palette),
             (EN.find_in_project, find_in_project),
             (EN.new_tab, new_tab),
             (EN.new_terminal, new_terminal),
@@ -357,6 +366,7 @@ mod tests {
             (EN.zoom_in, zoom_in),
             (EN.zoom_out, zoom_out),
             (EN.zoom_reset, zoom_reset),
+            (EN.reload, reload),
             (EN.sidebar_appearance, sidebar_appearance),
         ] {
             assert_ne!(english, chinese, "{english} has no translation");
