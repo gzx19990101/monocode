@@ -1,3 +1,7 @@
+#[cfg(target_os = "macos")]
+use tauri::menu::{AboutMetadata, Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
+#[cfg(target_os = "macos")]
+use tauri::Wry;
 use tauri::{AppHandle, Emitter, Manager};
 
 pub use crate::menu_language::{Lang, MenuLanguage};
@@ -281,7 +285,9 @@ fn build(app: &AppHandle, lang: Lang) -> tauri::Result<Menu<Wry>> {
         .item(&quit)
         .build()?;
 
-    let window_menu = SubmenuBuilder::new(app, l.window).build()?;
-    window_menu.set_as_windows_menu_for_nsapp()?;
+    // Use Tauri's reserved id so macOS wires the native Window menu (including
+    // system tiling actions) when the menu is attached to the application.
+    let window_menu =
+        SubmenuBuilder::with_id(app, tauri::menu::WINDOW_SUBMENU_ID, l.window).build()?;
     Menu::with_items(app, &[&app_menu, &file, &edit, &view, &window_menu])
 }
