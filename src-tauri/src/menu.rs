@@ -63,9 +63,10 @@ pub fn dispatch(app: &AppHandle, id: &str) {
         | "open_model_picker" | "open_settings" | "check_for_updates" => {
             let _ = app.emit(id, ());
         }
-        // Zoom, Reload, Command Palette, and Close All Tabs target one window: a broadcast would
+        // Sidebar, Zoom, Reload, Command Palette, and Close All Tabs target one window: a broadcast would
         // make every window act on a single menu click.
-        "zoom_in"
+        "toggle_session_sidebar"
+        | "zoom_in"
         | "zoom_out"
         | "zoom_reset"
         | "reload"
@@ -179,6 +180,10 @@ fn build(app: &AppHandle, lang: Lang) -> tauri::Result<Menu<Wry>> {
     let toggle_sidebar = MenuItemBuilder::with_id("toggle_sidebar", l.toggle_sidebar)
         .accelerator("CmdOrCtrl+B")
         .build(app)?;
+    let toggle_session_sidebar =
+        MenuItemBuilder::with_id("toggle_session_sidebar", l.toggle_session_sidebar)
+            .accelerator("CmdOrCtrl+Shift+B")
+            .build(app)?;
     let open_model_picker = MenuItemBuilder::with_id("open_model_picker", l.switch_model)
         .accelerator("CmdOrCtrl+.")
         .build(app)?;
@@ -226,6 +231,7 @@ fn build(app: &AppHandle, lang: Lang) -> tauri::Result<Menu<Wry>> {
 
     let view = SubmenuBuilder::new(app, l.view)
         .item(&toggle_sidebar)
+        .item(&toggle_session_sidebar)
         .item(&open_inbox)
         .item(&open_notes)
         .item(&toggle_terminal)

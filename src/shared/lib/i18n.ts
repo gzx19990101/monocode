@@ -29,6 +29,7 @@ const ZH: Record<string, string> = {
   Forward: "前进",
   "Toggle Projects": "切换项目栏",
   "Toggle Sidebar": "切换侧边栏",
+  "Toggle Session Sidebar": "切换会话侧边栏",
   "Close Tab": "关闭标签页",
   "Close {name}": "关闭 {name}",
   "Close Other Tabs": "关闭其他标签页",
@@ -93,6 +94,23 @@ const ZH: Record<string, string> = {
   "Reset Zoom": "重置缩放",
   "Toggle Terminal": "显示/隐藏终端",
   "New Terminal": "新建终端",
+
+  // Chat background effects
+  "Background effect": "背景效果",
+  "Shows the original artwork.": "显示原始图像。",
+  "Rebuilds the artwork with a dithered color palette.":
+    "使用抖动调色板重新绘制图像。",
+  "Recreates the artwork with colored characters on black.":
+    "在黑色背景上用彩色字符重现图像。",
+  "Recreates the artwork with colored print dots on black.":
+    "在黑色背景上用彩色印刷圆点重现图像。",
+  "Adds a pronounced horizontal display-line texture.":
+    "添加明显的水平显示扫描线纹理。",
+  None: "无",
+  Dither: "抖动",
+  ASCII: "ASCII",
+  Halftone: "半色调",
+  Scanlines: "扫描线",
 
   // Sidebar
   Sessions: "会话",
@@ -452,9 +470,11 @@ export function saveLanguage(value: Language) {
   }
   applyDocumentLanguage(currentLanguage());
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<Language>(LANGUAGE_CHANGE_EVENT, {
-    detail: next,
-  }));
+  window.dispatchEvent(
+    new CustomEvent<Language>(LANGUAGE_CHANGE_EVENT, {
+      detail: next,
+    }),
+  );
 }
 
 function systemLanguage(): ResolvedLanguage {

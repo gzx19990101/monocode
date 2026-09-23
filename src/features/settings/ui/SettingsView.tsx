@@ -41,7 +41,11 @@ import { WindowControls } from "../../../app/shell/WindowControls";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useColorScheme } from "../../../shared/hooks/useColorScheme";
 import { useLanguage, useT } from "../../../shared/hooks/useI18n";
-import { loadLanguage, saveLanguage, type Language } from "../../../shared/lib/i18n";
+import {
+  loadLanguage,
+  saveLanguage,
+  type Language,
+} from "../../../shared/lib/i18n";
 import {
   applyChatBackground,
   applyChatBackgroundEmptyOpacity,
@@ -69,6 +73,7 @@ import {
   loadChatBackgroundPath,
   loadChatBackgroundSessionOpacity,
   loadChatBackgroundScope,
+  loadNewThreadBackgroundEffect,
   loadThemeDarkLightness,
   loadThemePreference,
   loadSidebarBlur,
@@ -83,6 +88,7 @@ import {
   saveChatBackgroundPath,
   saveChatBackgroundSessionOpacity,
   saveChatBackgroundScope,
+  setNewThreadBackgroundEffect,
   saveThemeDarkLightness,
   saveThemePreference,
   saveSidebarBlur,
@@ -112,6 +118,11 @@ import {
   THEME_SATURATION_MIN,
   type ThemePreference,
   type ChatBackgroundScope,
+  NEW_THREAD_BACKGROUND_EFFECTS,
+  NEW_THREAD_BACKGROUND_EFFECT_LABELS,
+  NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS,
+  NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
+  type NewThreadBackgroundEffect,
   type TranscriptLayout,
 } from "../model/appearance";
 import {
@@ -207,7 +218,10 @@ import {
   saveLinearToken,
   type LinearTeam,
 } from "../../inbox/model/linear";
-import { loadTabGroupLabels, resolveTabGroupLabel } from "../../workspace/model/tabGroups";
+import {
+  loadTabGroupLabels,
+  resolveTabGroupLabel,
+} from "../../workspace/model/tabGroups";
 import {
   filterKeybindings,
   KEYBINDINGS,
@@ -267,7 +281,10 @@ import {
 import { SkillsPage } from "../../skills/ui/SkillsPage";
 import { ProjectNotificationSettings } from "../../notifications/ui/ProjectNotificationSettings";
 import { WorktreesPage } from "../../source-control/ui/WorktreesPage";
-import { removeWorktree, type RemoveWorktree } from "../../source-control/model/worktrees";
+import {
+  removeWorktree,
+  type RemoveWorktree,
+} from "../../source-control/model/worktrees";
 import type { Session } from "../../sessions/model/session";
 
 /**
@@ -609,9 +626,7 @@ function SettingsSearch({
                   {t(result.label)}
                 </span>
                 <span className="shrink-0 text-[11px] text-content/40">
-                  {result.settingId
-                    ? t(result.sectionLabel)
-                    : t("Page")}
+                  {result.settingId ? t(result.sectionLabel) : t("Page")}
                 </span>
               </button>
             ))
@@ -801,7 +816,11 @@ function GeneralPage({
             "A global markdown notebook on the project rail. Save a finished turn from the transcript, then mention it later with @note or add it to chat.",
           )}
         >
-          <Toggle label={t("Notes")} on={notesEnabled} onChange={onNotesEnabled} />
+          <Toggle
+            label={t("Notes")}
+            on={notesEnabled}
+            onChange={onNotesEnabled}
+          />
         </Row>
         <Row
           id="working-agents"
@@ -1118,9 +1137,7 @@ function InboxPage({
             Linear
           </span>
         }
-        description={t(
-          "Issues assigned to you, from the teams you pick.",
-        )}
+        description={t("Issues assigned to you, from the teams you pick.")}
       >
         <LinearSettings />
       </Group>
@@ -1739,6 +1756,8 @@ function useAppearanceSettings(
     useState(loadChatBackgroundSessionOpacity);
   const [chatBackgroundScope, setChatBackgroundScope] =
     useState<ChatBackgroundScope>(loadChatBackgroundScope);
+  const [newThreadBackgroundEffect, setBackgroundEffect] =
+    useState<NewThreadBackgroundEffect>(loadNewThreadBackgroundEffect);
   const [chatBackgroundBusy, setChatBackgroundBusy] = useState(false);
   const [chatBackgroundError, setChatBackgroundError] = useState<string | null>(
     null,
@@ -1853,6 +1872,14 @@ function useAppearanceSettings(
     setChatBackgroundScope(next);
   }, []);
 
+  const onNewThreadBackgroundEffect = useCallback(
+    (next: NewThreadBackgroundEffect) => {
+      setNewThreadBackgroundEffect(next);
+      setBackgroundEffect(next);
+    },
+    [],
+  );
+
   const onUiScale = useCallback((percent: number) => {
     const next = saveUiScale(percent / 100);
     setUiScale(next);
@@ -1884,6 +1911,7 @@ function useAppearanceSettings(
       Math.round(CHAT_BACKGROUND_SESSION_OPACITY_DEFAULT * 100),
     );
     onChatBackgroundScope(CHAT_BACKGROUND_SCOPE_DEFAULT);
+    onNewThreadBackgroundEffect(NEW_THREAD_BACKGROUND_EFFECT_DEFAULT);
     if (chatBackgroundPath) void onClearChatBackground();
     onUiScale(Math.round(UI_SCALE_DEFAULT * 100));
     onCollapsedProjectRailMode(COLLAPSED_PROJECT_RAIL_MODE_DEFAULT);
@@ -1894,6 +1922,7 @@ function useAppearanceSettings(
     onChatBackgroundEmptyOpacity,
     onChatBackgroundSessionOpacity,
     onChatBackgroundScope,
+    onNewThreadBackgroundEffect,
     onClearChatBackground,
     onAccentColor,
     onShowExcludedFiles,
@@ -1919,6 +1948,7 @@ function useAppearanceSettings(
     chatBackgroundEmptyOpacity,
     chatBackgroundSessionOpacity,
     chatBackgroundScope,
+    newThreadBackgroundEffect,
     chatBackgroundBusy,
     chatBackgroundError,
     uiScale,
@@ -1936,6 +1966,7 @@ function useAppearanceSettings(
     onChatBackgroundEmptyOpacity,
     onChatBackgroundSessionOpacity,
     onChatBackgroundScope,
+    onNewThreadBackgroundEffect,
     onUiScale,
     onCollapsedProjectRailMode,
     restoreDefaults,
@@ -2179,12 +2210,13 @@ function ChatBackgroundCard({
         <div className="overflow-hidden rounded-lg border border-content/10">
           {hasImage ? (
             <div className="relative h-36">
-              <img
-                src={src ?? undefined}
-                alt=""
-                draggable={false}
-                className="size-full object-cover"
-                style={{ opacity: appearance.chatBackgroundEmptyOpacity }}
+              <div
+                aria-hidden
+                className="size-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: "var(--chat-background-image)",
+                  opacity: appearance.chatBackgroundEmptyOpacity,
+                }}
               />
               <span className="pointer-events-none absolute bottom-2 left-2 text-[11px] text-content/40">
                 {t("Empty chat preview at {percent}%", {
@@ -2237,10 +2269,27 @@ function ChatBackgroundCard({
       {hasImage ? (
         <>
           <Row
-            label={t("Show on")}
+            label={t("Background effect")}
             description={t(
-              "Empty sessions only, or every conversation.",
+              NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS[
+                appearance.newThreadBackgroundEffect
+              ],
             )}
+          >
+            <Segmented
+              label={t("Background effect")}
+              value={appearance.newThreadBackgroundEffect}
+              options={NEW_THREAD_BACKGROUND_EFFECTS.map((effect) => ({
+                value: effect,
+                label: t(NEW_THREAD_BACKGROUND_EFFECT_LABELS[effect]),
+              }))}
+              onChange={appearance.onNewThreadBackgroundEffect}
+              optionIdPrefix="new-thread-background-effect"
+            />
+          </Row>
+          <Row
+            label={t("Show on")}
+            description={t("Empty sessions only, or every conversation.")}
           >
             <Segmented
               label={t("Show background on")}
@@ -2254,9 +2303,7 @@ function ChatBackgroundCard({
           </Row>
           <Row
             label={t("Empty chat visibility")}
-            description={t(
-              "Background strength before a chat has messages.",
-            )}
+            description={t("Background strength before a chat has messages.")}
           >
             <Slider
               label={t("Empty chat background visibility")}
@@ -3110,11 +3157,13 @@ function Segmented<T extends string>({
   value,
   options,
   onChange,
+  optionIdPrefix,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  optionIdPrefix?: string;
 }) {
   return (
     <div
@@ -3127,6 +3176,11 @@ function Segmented<T extends string>({
     >
       {options.map((option) => (
         <button
+          id={
+            optionIdPrefix
+              ? `${optionIdPrefix}-${option.value.toLowerCase()}`
+              : undefined
+          }
           key={option.value}
           type="button"
           role="radio"
