@@ -208,8 +208,8 @@ const ZH: Record<string, string> = {
   // General page
   Language: "语言",
   "Quick composer": "快速输入框",
-  "Press ⌘⇧Space in any app to float a prompt over it and start a session without switching to MonoCode. Return starts it in the background; ⌘Return starts it and brings the session forward.":
-    "在任意应用中按 ⌘⇧Space 可悬浮打开提示框并启动会话，无需切换到 MonoCode。按 Return 在后台启动；按 ⌘Return 启动并切换到会话。",
+  "Press {shortcut} in any app to float a prompt over it and start a session without switching to MonoCode. Change the shortcut in Keybindings. Return starts it in the background; ⌘Return starts it and brings the session forward.":
+    "在任意应用中按 {shortcut} 可悬浮打开提示框并启动会话，无需切换到 MonoCode。可在快捷键设置中更改快捷键。按 Return 在后台启动；按 ⌘Return 启动并切换到会话。",
   "Display language for the interface. Takes effect immediately.":
     "界面显示语言，立即生效。",
   "Auto (system)": "自动（跟随系统）",
@@ -360,8 +360,8 @@ const ZH: Record<string, string> = {
   // Keybindings page
   Shortcuts: "快捷键",
   Keybinding: "按键",
-  "Bindings come from the app menu and the workspace key handler; they aren’t customizable yet.":
-    "快捷键来自应用菜单和工作区按键处理；暂不支持自定义。",
+  "Bindings come from the app menu and the workspace key handler. Click the Quick Composer binding to change its global shortcut.":
+    "快捷键来自应用菜单和工作区按键处理。点击快速输入框的按键绑定可更改其全局快捷键。",
   binding: "个快捷键",
   bindings: "个快捷键",
   Filter: "筛选",
