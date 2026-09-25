@@ -43,6 +43,7 @@ import {
 } from "../../sessions/model/session";
 import { FilePane } from "../../files/ui/FilePane";
 import { SessionPane } from "../../sessions/ui/SessionPane";
+import type { TranscriptPool } from "../../sessions/ui/TranscriptPool";
 import type { SessionFolderTarget } from "../../sessions/model/sessionFolders";
 import type { Worktree } from "../../source-control/model/worktrees";
 
@@ -63,6 +64,7 @@ type Shared = {
   onSelectFile: (paneId: string, fileId: string) => void;
   onCloseFile: (paneId: string, fileId: string) => void;
   onCloseOtherFiles: (paneId: string, fileId: string) => void;
+  onPinFile?: (fileId: string) => void;
   onReorderFiles: (paneId: string, ids: string[]) => void;
   onFileDirtyChange: (fileId: string, dirty: boolean) => void;
   onFileErrorCountChange: (fileId: string, count: number) => void;
@@ -155,6 +157,7 @@ type Shared = {
   ) => void;
   onNewTerminal: (sessionId: string) => void;
   onTerminalMetaChange?: (fileId: string, patch: TerminalMetaPatch) => void;
+  transcriptPool?: TranscriptPool;
 };
 
 type Props = Shared & { layout: LayoutNode };
@@ -185,6 +188,7 @@ function PaneTreeComponent({
   onSelectFile,
   onCloseFile,
   onCloseOtherFiles,
+  onPinFile,
   onReorderFiles,
   onFileDirtyChange,
   onFileErrorCountChange,
@@ -231,6 +235,7 @@ function PaneTreeComponent({
   onDetachPane,
   onNewTerminal,
   onTerminalMetaChange,
+  transcriptPool,
 }: Props) {
   const treeRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef(layout);
@@ -403,6 +408,7 @@ function PaneTreeComponent({
                 onSelectFile={onSelectFile}
                 onCloseFile={onCloseFile}
                 onCloseOtherFiles={onCloseOtherFiles}
+                onPinFile={onPinFile}
                 onReorderFiles={onReorderFiles}
                 onDirtyChange={onFileDirtyChange}
                 onErrorCountChange={onFileErrorCountChange}
@@ -475,6 +481,7 @@ function PaneTreeComponent({
                 onHandoff={onHandoff}
                 onNewTerminal={onNewTerminal}
                 onPaneDragStart={onPaneDragStart}
+                transcriptPool={transcriptPool}
               />
             ) : null}
           </div>

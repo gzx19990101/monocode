@@ -78,8 +78,7 @@ pub fn dispatch(app: &AppHandle, id: &str) {
 
 /// Emit `id` to the focused window, falling back to a visible one, then any.
 fn emit_to_focused(app: &AppHandle, id: &str) {
-    let mut windows: Vec<_> = app.webview_windows().into_values().collect();
-    windows.sort_by(|a, b| a.label().cmp(b.label()));
+    let windows = crate::window::workspace_windows(app);
     let target = windows
         .iter()
         .find(|window| window.is_focused().unwrap_or(false))

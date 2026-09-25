@@ -2032,6 +2032,7 @@ export function Composer({
                   harness={harness}
                   model={model}
                   values={modelSettings}
+                  project={cwd}
                   hideSettings={controlsBeside}
                   hotkeys={hotkeys && enabled}
                   onChange={onModelChange}

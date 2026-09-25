@@ -207,6 +207,9 @@ const ZH: Record<string, string> = {
 
   // General page
   Language: "语言",
+  "Quick composer": "快速输入框",
+  "Press ⌘⇧Space in any app to float a prompt over it and start a session without switching to MonoCode. Return starts it in the background; ⌘Return starts it and brings the session forward.":
+    "在任意应用中按 ⌘⇧Space 可悬浮打开提示框并启动会话，无需切换到 MonoCode。按 Return 在后台启动；按 ⌘Return 启动并切换到会话。",
   "Display language for the interface. Takes effect immediately.":
     "界面显示语言，立即生效。",
   "Auto (system)": "自动（跟随系统）",
@@ -334,6 +337,11 @@ const ZH: Record<string, string> = {
   "Code review": "代码审查",
   "Where a turn's changes open when you go to read them.":
     "查看一轮更改时打开的视图。",
+  "What happens when you save a file in the workspace editor.":
+    "在工作区编辑器中保存文件时执行的操作。",
+  "Format on save": "保存时格式化",
+  "Run Prettier on supported files before writing. Off keeps the text you typed, including quote style.":
+    "写入前使用 Prettier 格式化支持的文件。关闭后会保留你输入的文本，包括引号样式。",
   "Diff view": "差异视图",
   "Editor keeps working-tree changes in the file. Unified stacks every changed file in one review, with sticky headers and collapsed unchanged lines.":
     "编辑器在文件内显示工作区更改。统一视图将所有更改的文件叠加在同一个审查界面中，带固定标题并折叠未更改的行。",
@@ -365,6 +373,11 @@ const ZH: Record<string, string> = {
 
   // Providers page
   "Agent CLIs": "智能体 CLI",
+  "Provider defaults scope": "提供方默认设置范围",
+  Global: "全局",
+  "These defaults apply to {name} only. A provider with Show in picker off is also kept out of new conversations started in this project.":
+    "这些默认设置仅应用于 {name}。关闭“在选择器中显示”的提供方也不会出现在此项目新建的会话中。",
+  "Hidden globally": "已在全局隐藏",
   "A provider is listed as installed once its CLI is found on your PATH. Uninstalled CLIs stay listed but are left out of the model picker, as are installed ones with Show in picker off. The model beside a provider is what its new conversations start with; Use by default picks the provider itself.":
     "提供方的 CLI 在 PATH 中找到后即显示为已安装。未安装的 CLI 仍会列出，但不会出现在模型选择器中；已安装但关闭“在选择器中显示”的也一样。提供方旁边的模型是其新对话的默认模型；“设为默认”会选中该提供方本身。",
   Advanced: "高级",
