@@ -249,6 +249,14 @@ export type QueuedMessage = {
 
 export type MessageQueueStatus = "active" | "paused" | "resuming";
 
+/** The provider stopped the last turn at a usage limit. */
+export type UsageLimit = {
+  /** Epoch ms when the provider's window resets, once known. */
+  resetsAt?: number;
+  /** Send a continue turn once the window resets. */
+  resumeAtReset?: boolean;
+};
+
 /** Provider/model provenance captured when a user turn is submitted. */
 export type TurnModel = {
   harness: HarnessId;
@@ -282,6 +290,10 @@ export type Block = {
   providerTurnId?: string;
   /** User turn saved to the session but not submitted to the harness yet. */
   draft?: boolean;
+  /** This user turn activated MonoCode app access for its thread. */
+  monocode?: boolean;
+  /** Stable CLI request that submitted this turn, for safe retries. */
+  appRequestId?: string;
   /** Provider-reported token metrics for this user turn, when available. */
   turnMetrics?: TurnMetrics;
   tool?: {
@@ -393,6 +405,8 @@ export type Session = {
   queueStatus?: MessageQueueStatus;
   /** Prevent auto-dispatch while this queued row is being edited. In-memory only. */
   editingQueuedMessageId?: string;
+  /** Last turn hit a provider usage limit; cleared by the next send. In-memory only. */
+  usageLimit?: UsageLimit;
   /** Provider-side conversation id (Cursor ACP session id). */
   providerSessionId?: string;
   /** Named local credential profile used by Claude or Codex. */
