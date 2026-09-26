@@ -223,6 +223,7 @@ pub fn run() {
         .manage(pty::PtyHost::new())
         .manage(window_transfer::WindowTransferState::new())
         .manage(menu::MenuLanguage::default())
+        .manage(menu::MenuKeybindings::default())
         .setup(|app| {
             harness::reap_orphaned_harness_processes();
             session_store::init(app.handle())?;
@@ -394,6 +395,7 @@ pub fn run() {
             fs::read_text_file,
             fs::omp_session_interjections,
             fs::omp_active_assistant_texts,
+            fs::claude_shell_commands,
             fs::write_text_file,
             skills::list_skills,
             search::search_project,
@@ -402,6 +404,8 @@ pub fn run() {
             harness::harness_resolve_cursor,
             harness::harness_resolve_codex,
             harness::harness_resolve_opencode,
+            harness::harness_resolve_configured,
+            harness::harness_runtime_binary_paths,
             harness::harness_resolve_claude,
             harness::harness_resolve_omp,
             harness::harness_resolve_pi,
@@ -462,6 +466,8 @@ pub fn run() {
             set_traffic_lights_visible,
             set_window_background_blur,
             set_dock_badge,
+            #[cfg(target_os = "macos")]
+            menu::keybindings_set_overrides,
             open_new_window,
             window::hide_window,
             window::destroy_window,

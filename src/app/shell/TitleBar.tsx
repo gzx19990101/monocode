@@ -101,6 +101,8 @@ type Props = {
   onOpenNotes?: () => void;
   onClose: (id: string) => void;
   onCloseMany: (ids: string[], fallbackId: string) => void;
+  onArchiveTab?: (id: string) => void;
+  onDeleteTab?: (id: string) => void;
   onReorder: (ids: string[], movedId?: string) => void;
   onPlaceOnPane?: (tabId: string, targetId: string, edge: PaneEdge) => void;
   onGoToFile?: () => void;
@@ -625,6 +627,8 @@ function TitleBarComponent({
   onOpenNotes,
   onClose,
   onCloseMany,
+  onArchiveTab,
+  onDeleteTab,
   onReorder,
   onPlaceOnPane,
   onGoToFile,
@@ -789,6 +793,38 @@ function TitleBarComponent({
           label: t("Close Tabs to the Left"),
           disabled: contextCloseIds?.left.length === 0,
         },
+        ...(contextTab.sessionCount > 0 && (onArchiveTab || onDeleteTab)
+          ? [
+              { kind: "sep" as const },
+              ...(onArchiveTab
+                ? [
+                    {
+                      kind: "item" as const,
+                      id: "archive",
+                      label: "Archive",
+                      description:
+                        contextTab.sessionCount > 1
+                          ? `All ${contextTab.sessionCount} conversations in this tab`
+                          : undefined,
+                    },
+                  ]
+                : []),
+              ...(onDeleteTab
+                ? [
+                    {
+                      kind: "item" as const,
+                      id: "delete",
+                      label: "Delete",
+                      description:
+                        contextTab.sessionCount > 1
+                          ? `Permanently delete all ${contextTab.sessionCount} conversations in this tab`
+                          : undefined,
+                      danger: true,
+                    },
+                  ]
+                : []),
+            ]
+          : []),
       ]
     : [];
 
@@ -797,6 +833,14 @@ function TitleBarComponent({
     setTabMenu(null);
     if (id === "close") {
       onClose(contextTab.id);
+      return;
+    }
+    if (id === "archive") {
+      onArchiveTab?.(contextTab.id);
+      return;
+    }
+    if (id === "delete") {
+      onDeleteTab?.(contextTab.id);
       return;
     }
     if (id === "others" || id === "right" || id === "left") {

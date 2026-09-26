@@ -360,8 +360,8 @@ const ZH: Record<string, string> = {
   // Keybindings page
   Shortcuts: "快捷键",
   Keybinding: "按键",
-  "Bindings come from the app menu and the workspace key handler. Click the Quick Composer binding to change its global shortcut.":
-    "快捷键来自应用菜单和工作区按键处理。点击快速输入框的按键绑定可更改其全局快捷键。",
+  "Click a shortcut to record new keys. Press Delete while recording to disable it.":
+    "点击快捷键即可录制新的组合键；录制时按 Delete 可禁用它。",
   binding: "个快捷键",
   bindings: "个快捷键",
   Filter: "筛选",
@@ -375,11 +375,11 @@ const ZH: Record<string, string> = {
   "Agent CLIs": "智能体 CLI",
   "Provider defaults scope": "提供方默认设置范围",
   Global: "全局",
-  "These defaults apply to {name} only. A provider with Show in picker off is also kept out of new conversations started in this project.":
-    "这些默认设置仅应用于 {name}。关闭“在选择器中显示”的提供方也不会出现在此项目新建的会话中。",
+  "These defaults apply to {name} only. A provider with Show in picker off is also kept out of new conversations started in this project. CLI paths remain global for MonoCode.":
+    "这些默认设置仅应用于 {name}。关闭“在选择器中显示”的提供方也不会出现在此项目新建的会话中。CLI 路径对 MonoCode 全局生效。",
   "Hidden globally": "已在全局隐藏",
-  "A provider is listed as installed once its CLI is found on your PATH. Uninstalled CLIs stay listed but are left out of the model picker, as are installed ones with Show in picker off. The model beside a provider is what its new conversations start with; Use by default picks the provider itself.":
-    "提供方的 CLI 在 PATH 中找到后即显示为已安装。未安装的 CLI 仍会列出，但不会出现在模型选择器中；已安装但关闭“在选择器中显示”的也一样。提供方旁边的模型是其新对话的默认模型；“设为默认”会选中该提供方本身。",
+  "A provider is listed as installed once its CLI is found on your PATH. Uninstalled CLIs stay listed but are left out of the model picker, as are installed ones with Show in picker off. The model beside a provider is what its new conversations start with; Use by default picks the provider itself. CLI paths are global for MonoCode and apply to every project.":
+    "提供方的 CLI 在 PATH 中找到后即显示为已安装。未安装的 CLI 仍会列出，但不会出现在模型选择器中；已安装但关闭“在选择器中显示”的也一样。提供方旁边的模型是其新对话的默认模型；“设为默认”会选中该提供方本身。CLI 路径对 MonoCode 全局生效，适用于每个项目。",
   Advanced: "高级",
   "Claude Code hooks": "Claude Code 钩子",
   "Run the hooks configured in your settings.json files — PreToolUse command rewrites, blocks, notifications, and the rest — just as the Claude Code CLI would. Turn this off if a hook is misbehaving and you need the session back. Takes effect on the next turn.":

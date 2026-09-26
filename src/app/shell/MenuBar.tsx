@@ -7,6 +7,11 @@ import {
 import { useT } from "../../shared/hooks/useI18n";
 import { ALT, MOD, SHIFT } from "../../platform/tauri/platform";
 import { runUpdateFlow } from "../model/updater";
+import {
+  keybindingShortcutLabel,
+  loadKeybindingOverrides,
+  subscribeKeybindings,
+} from "../../features/settings/model/settings";
 
 type MenuKey = "file" | "view" | "terminal";
 
@@ -57,7 +62,17 @@ export function MenuBar({
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(
     null,
   );
+  const [, refreshShortcuts] = useState(loadKeybindingOverrides);
   const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(
+    () =>
+      subscribeKeybindings(() => refreshShortcuts(loadKeybindingOverrides())),
+    [],
+  );
+
+  const shortcut = (command: string, keys: string) =>
+    keybindingShortcutLabel(command, keys) ?? undefined;
 
   // Toggle with standalone Alt key tap
   useEffect(() => {
@@ -212,63 +227,63 @@ export function MenuBar({
             kind: "item",
             id: "new_tab",
             label: t("New Tab"),
-            shortcut: `${MOD}T`,
+            shortcut: shortcut("Tab: New", `${MOD}T`),
           },
           {
             kind: "item",
             id: "new_terminal",
             label: t("New Terminal"),
-            shortcut: `${MOD}\``,
+            shortcut: shortcut("Terminal: New", `${MOD}\``),
           },
           {
             kind: "item",
             id: "new_window",
             label: t("New Window"),
-            shortcut: `${MOD}${SHIFT}N`,
+            shortcut: shortcut("App: New Window", `${MOD}${SHIFT}N`),
           },
           { kind: "sep" },
           {
             kind: "item",
             id: "open_project",
             label: t("Open Project…"),
-            shortcut: `${MOD}O`,
+            shortcut: shortcut("App: Open Project", `${MOD}O`),
           },
           {
             kind: "item",
             id: "open_search",
             label: t("Search…"),
-            shortcut: `${MOD}K`,
+            shortcut: shortcut("App: Search", `${MOD}K`),
           },
           {
             kind: "item",
             id: "go_to_file",
             label: t("Go to File…"),
-            shortcut: `${MOD}P`,
+            shortcut: shortcut("App: Go to File", `${MOD}P`),
           },
           {
             kind: "item",
             id: "find_in_project",
             label: t("Find in Files…"),
-            shortcut: `${MOD}${SHIFT}F`,
+            shortcut: shortcut("App: Find in Files", `${MOD}${SHIFT}F`),
           },
           { kind: "sep" },
           {
             kind: "item",
             id: "close_tab",
             label: t("Close Pane"),
-            shortcut: `${MOD}W`,
+            shortcut: shortcut("Pane: Close", `${MOD}W`),
           },
           {
             kind: "item",
             id: "close_other_tabs",
             label: t("Close Other Tabs"),
-            shortcut: `${MOD}${ALT}T`,
+            shortcut: shortcut("Tab: Close Others", `${MOD}${ALT}T`),
           },
           {
             kind: "item",
             id: "close_all_tabs",
             label: t("Close All Tabs"),
-            shortcut: `${MOD}${SHIFT}W`,
+            shortcut: shortcut("Tab: Close All", `${MOD}${SHIFT}W`),
           },
           { kind: "sep" },
           {
@@ -283,13 +298,16 @@ export function MenuBar({
             kind: "item",
             id: "toggle_sidebar",
             label: t("Toggle Sidebar"),
-            shortcut: `${MOD}B`,
+            shortcut: shortcut("App: Toggle Sidebar", `${MOD}B`),
           },
           {
             kind: "item",
             id: "toggle_session_sidebar",
             label: t("Toggle Session Sidebar"),
-            shortcut: `${MOD}${SHIFT}B`,
+            shortcut: shortcut(
+              "App: Toggle Session Sidebar",
+              `${MOD}${SHIFT}B`,
+            ),
           },
           { kind: "item", id: "open_inbox", label: t("Inbox") },
           ...(onOpenNotes
@@ -299,13 +317,13 @@ export function MenuBar({
             kind: "item",
             id: "toggle_terminal",
             label: t("Toggle Terminal"),
-            shortcut: `${MOD}J`,
+            shortcut: shortcut("Terminal: Toggle Dock", `${MOD}J`),
           },
           {
             kind: "item",
             id: "open_model_picker",
             label: t("Switch Model…"),
-            shortcut: `${MOD}.`,
+            shortcut: shortcut("App: Switch Model", `${MOD}.`),
           },
           { kind: "item", id: "toggle_diff", label: t("Toggle Changes") },
           { kind: "sep" },
@@ -313,19 +331,19 @@ export function MenuBar({
             kind: "item",
             id: "zoom_in",
             label: t("Zoom In"),
-            shortcut: `${MOD}+`,
+            shortcut: shortcut("View: Zoom In", `${MOD}+`),
           },
           {
             kind: "item",
             id: "zoom_out",
             label: t("Zoom Out"),
-            shortcut: `${MOD}-`,
+            shortcut: shortcut("View: Zoom Out", `${MOD}-`),
           },
           {
             kind: "item",
             id: "zoom_reset",
             label: t("Reset Zoom"),
-            shortcut: `${MOD}0`,
+            shortcut: shortcut("View: Reset Zoom", `${MOD}0`),
           },
         ];
       case "terminal":
@@ -334,13 +352,13 @@ export function MenuBar({
             kind: "item",
             id: "new_terminal",
             label: t("New Terminal"),
-            shortcut: `${MOD}\``,
+            shortcut: shortcut("Terminal: New", `${MOD}\``),
           },
           {
             kind: "item",
             id: "toggle_terminal",
             label: t("Toggle Terminal"),
-            shortcut: `${MOD}J`,
+            shortcut: shortcut("Terminal: Toggle Dock", `${MOD}J`),
           },
         ];
     }

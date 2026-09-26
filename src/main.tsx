@@ -16,6 +16,7 @@ import {
 import { homeDir } from "./platform/tauri/fs";
 import { setHomeDir } from "./shared/lib/paths";
 import { consumeInstalledUpdate } from "./app/model/updateNotice";
+import { initializeProviderBinaryPaths } from "./features/providers/model/providerBinaryPaths";
 import "./styles/index.css";
 
 initAppearance();
@@ -27,6 +28,9 @@ initSounds();
 const homeDirPrimed = homeDir()
   .then(setHomeDir)
   .catch(() => {});
+const providerBinaryPathsPrimed = initializeProviderBinaryPaths().catch(
+  () => undefined,
+);
 
 function dismissBootSplash() {
   const splash = document.getElementById("boot-splash");
@@ -70,8 +74,8 @@ void listen("quit_aborted", () => {
   abortQuit();
 });
 
-void Promise.all([homeDirPrimed, loadBootWorkspace()]).then(
-  ([, { windowTransfer, resumed, history, historyCwd }]) => {
+void Promise.all([homeDirPrimed, providerBinaryPathsPrimed, loadBootWorkspace()]).then(
+  ([, , { windowTransfer, resumed, history, historyCwd }]) => {
     const installedUpdate = windowTransfer ? null : consumeInstalledUpdate();
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>
