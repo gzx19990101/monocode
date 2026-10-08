@@ -1,6 +1,7 @@
 use tauri::Manager;
 
 mod account_identity;
+mod artifacts;
 mod automations;
 mod azure_devops;
 mod chat_background;
@@ -12,6 +13,7 @@ mod external_editor;
 mod fs;
 mod gitlab;
 mod harness;
+mod harness_updates;
 mod inbox_media;
 mod jira;
 mod linear;
@@ -20,20 +22,29 @@ mod link_preview;
 mod macos;
 #[cfg(target_os = "macos")]
 mod macos_background;
+mod mcp;
 mod menu;
 mod menu_language;
+mod mono;
+#[cfg(target_os = "macos")]
+mod mono_chat;
+mod mono_transcript;
 mod notes;
 mod notifications;
 mod pasteboard;
+mod pi_usage;
 mod project_logo;
 mod pty;
 #[cfg(target_os = "macos")]
 mod quick_composer;
 mod rate_limits;
 mod reminders;
+mod remote;
+mod remote_ssh;
 mod search;
 mod session_store;
 mod skills;
+pub mod ssh_askpass;
 #[cfg(target_os = "windows")]
 mod tray;
 mod window;
@@ -213,14 +224,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_denylist(&[
-                    window::QUICK_COMPOSER_LABEL,
-                    window::QUICK_COMPOSER_GIT_LABEL,
-                ])
+                .with_filter(window::is_workspace_window)
                 .build(),
         )
         .manage(harness::HarnessHost::new())
         .manage(pty::PtyHost::new())
+        .manage(remote::RemoteConnections::default())
         .manage(window_transfer::WindowTransferState::new())
         .manage(menu::MenuLanguage::default())
         .manage(menu::MenuKeybindings::default())
@@ -236,6 +245,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 quick_composer::init(app.handle())?;
+                mono_chat::init(app.handle())?;
                 macos::install_dock_menu(app.handle(), menu::language(app.handle()));
                 if let Some(window) = app.get_webview_window("main") {
                     macos::install(&window);
@@ -254,6 +264,15 @@ pub fn run() {
             menu::dispatch(app, event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
+            remote::remote_machines,
+            remote::remote_connect,
+            remote::remote_disconnect,
+            remote::remote_request,
+            remote::remote_ssh_begin,
+            remote::remote_ssh_reconnect,
+            remote::remote_ssh_poll,
+            remote::remote_ssh_answer,
+            remote::remote_ssh_cancel,
             control::control_enable,
             control::control_disable,
             control::control_reply,
@@ -384,6 +403,7 @@ pub fn run() {
             fs::move_path,
             fs::reveal_path,
             pasteboard::clipboard_file_paths,
+            pasteboard::clipboard_image,
             pasteboard::copy_file_to_clipboard,
             fs::clone_repo,
             fs::read_file_preview,
@@ -392,6 +412,8 @@ pub fn run() {
             fs::read_file_base64,
             fs::read_binary_file,
             fs::write_attachment,
+            fs::save_generated_image,
+            fs::delete_generated_images,
             fs::read_text_file,
             fs::omp_session_interjections,
             fs::omp_active_assistant_texts,
@@ -399,6 +421,7 @@ pub fn run() {
             fs::write_text_file,
             skills::list_skills,
             search::search_project,
+            search::cancel_project_search,
             cursor_store::cursor_tool_calls,
             cursor_store::cursor_subagent_runs,
             harness::harness_resolve_cursor,
@@ -407,6 +430,12 @@ pub fn run() {
             harness::harness_resolve_configured,
             harness::harness_runtime_binary_paths,
             harness::harness_resolve_claude,
+            harness::claude_mcp_list,
+            mcp::mcp_discover,
+            mcp::mcp_add,
+            harness::claude_mcp_add,
+            harness::claude_mcp_remove,
+            harness::mcp_provider_login,
             harness::harness_resolve_omp,
             harness::harness_resolve_pi,
             harness::harness_resolve_fx,
@@ -422,8 +451,12 @@ pub fn run() {
             harness::harness_sse_open,
             harness::harness_sse_close,
             harness::harness_exec,
+            harness_updates::harness_latest_version,
+            harness_updates::harness_update_check_claim,
+            harness_updates::harness_update,
             harness::provider_account_remove,
             account_identity::provider_account_identity,
+            pi_usage::fetch_pi_usage,
             rate_limits::fetch_claude_usage,
             rate_limits::fetch_opencode_go_usage,
             pty::pty_spawn,
@@ -437,7 +470,12 @@ pub fn run() {
             session_store::session_rebase_project,
             session_store::session_list_linked,
             session_store::session_search,
+            session_store::cancel_session_search,
             session_store::session_get,
+            mono_transcript::mono_session_get,
+            mono_transcript::mono_session_page,
+            mono_transcript::mono_session_upsert,
+            mono_transcript::mono_session_find,
             session_store::session_delete,
             session_store::session_set_archived,
             session_store::session_set_pinned,
@@ -450,9 +488,16 @@ pub fn run() {
             notes::notes_list,
             notes::notes_get,
             notes::notes_upsert,
+            artifacts::artifacts_list,
+            artifacts::artifacts_get,
+            artifacts::artifacts_upsert,
+            artifacts::artifacts_delete,
             notes::notes_delete,
             notes::notes_save_image,
             notes::notes_image_path,
+            mono::mono_load,
+            mono::mono_read,
+            mono::mono_save,
             checkpoint::session_checkpoint_ensure,
             checkpoint::session_checkpoint_prepare,
             checkpoint::session_checkpoint_capture,
@@ -468,6 +513,8 @@ pub fn run() {
             set_dock_badge,
             #[cfg(target_os = "macos")]
             menu::keybindings_set_overrides,
+            #[cfg(target_os = "macos")]
+            menu::autosave_set_enabled,
             open_new_window,
             window::hide_window,
             window::destroy_window,
@@ -501,6 +548,28 @@ pub fn run() {
             quick_composer::git_popup::quick_git_complete,
             #[cfg(target_os = "macos")]
             quick_composer::git_popup::quick_composer_dismiss,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_sync,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_publish,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_state,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_ready,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_action,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_take,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_accept,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_reply,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_keep_alive,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_chat_switch,
+            #[cfg(target_os = "macos")]
+            mono_chat::mono_menu_bar_set_visible,
             window_transfer::stage_window_transfer,
             window_transfer::take_window_transfer,
             chat_background::save_chat_background,
@@ -516,11 +585,15 @@ pub fn run() {
 
     app.run(|handle, event| match event {
         #[cfg(target_os = "macos")]
-        tauri::RunEvent::Reopen {
-            has_visible_windows: false,
-            ..
-        } => {
-            let _ = window::show_hidden_or_open_new(handle);
+        tauri::RunEvent::Reopen { .. } => {
+            // A visible floating panel must not make a hidden workspace
+            // unreachable from the Dock.
+            if !window::workspace_windows(handle)
+                .iter()
+                .any(|window| window.is_visible().unwrap_or(false))
+            {
+                let _ = window::show_hidden_or_open_new(handle);
+            }
         }
         tauri::RunEvent::Ready => {
             #[cfg(target_os = "macos")]
@@ -542,6 +615,8 @@ pub fn run() {
                 .iter()
                 .any(|window| window.label() != label);
             control::window_closed(handle, &label);
+            #[cfg(target_os = "macos")]
+            mono_chat::window_closed(handle, &label);
             if !other_window {
                 reap_harness_children(handle);
             }
@@ -560,6 +635,7 @@ pub fn run() {
             window::request_quit(handle);
         }
         tauri::RunEvent::Exit => {
+            handle.state::<remote::RemoteConnections>().shutdown();
             reap_harness_children(handle);
         }
         _ => {}

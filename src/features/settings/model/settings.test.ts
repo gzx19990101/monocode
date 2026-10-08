@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { saveLanguage } from "../../../shared/lib/i18n";
 import {
   COMPOSER_RUNNER_DEFAULT,
+  AUTOSAVE_DEFAULT,
   COLLAPSED_PROJECT_RAIL_MODE_DEFAULT,
   searchSettings,
   searchSettingsLocalized,
@@ -17,6 +18,7 @@ import {
   LIVE_AGENTS_ENABLED_DEFAULT,
   TAB_ANIMATIONS_ENABLED_DEFAULT,
   loadComposerRunner,
+  loadAutosave,
   loadCollapsedProjectRailMode,
   loadModelControls,
   loadDiffViewer,
@@ -33,6 +35,7 @@ import {
   loadTabAnimationsEnabled,
   NOTES_ENABLED_DEFAULT,
   saveComposerRunner,
+  saveAutosave,
   saveCollapsedProjectRailMode,
   saveModelControls,
   saveDiffViewer,
@@ -59,6 +62,7 @@ const LIVE_AGENTS_KEY = "monocode.liveAgentsEnabled";
 const GRID_ARCADE_KEY = "monocode.gridArcadeEnabled";
 const DIFF_VIEWER_KEY = "monocode.diffViewer";
 const FORMAT_ON_SAVE_KEY = "monocode.formatOnSave";
+const AUTOSAVE_KEY = "monocode.autosave";
 const FILE_TAB_MODE_KEY = "monocode.fileTabMode";
 const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
 const LANGUAGE_KEY = "monocode.language";
@@ -271,8 +275,12 @@ describe("keybinding overrides", () => {
   });
 
   it("rejects a shortcut that shadows another command's default", () => {
+    // `App: Go to File` is bound to the platform modifier, so hardcoding
+    // Control here clashes with nothing on macOS and the assertion passes
+    // vacuously.
+    const mod = IS_MAC ? "Command" : "Control";
     expect(() =>
-      saveKeybindingOverride("App: Search", { shortcut: "Control+KeyP" }),
+      saveKeybindingOverride("App: Search", { shortcut: `${mod}+KeyP` }),
     ).toThrow("Already used by App: Go to File");
     expect(() =>
       saveKeybindingOverride("Tab: New", { shortcut: "Control+Tab" }),
@@ -482,6 +490,21 @@ describe("format on save setting", () => {
   });
 });
 
+describe("autosave setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  });
+
+  it("defaults to off and persists changes", () => {
+    expect(AUTOSAVE_DEFAULT).toBe(false);
+    expect(loadAutosave()).toBe(false);
+    saveAutosave(true);
+    expect(localStorage.getItem(AUTOSAVE_KEY)).toBe("1");
+    expect(loadAutosave()).toBe(true);
+  });
+});
+
 describe("diff viewer setting", () => {
   beforeEach(mockLocalStorage);
   afterEach(() => {
@@ -583,11 +606,14 @@ describe("settings navigation", () => {
     ]);
     expect(groups.flatMap((group) => group.sections.map((s) => s.id))).toEqual([
       "general",
+      "connections",
       "appearance",
       "keybindings",
       "chat",
       "providers",
+      "mcp",
       "skills",
+      "monos",
       "inbox",
       "archive",
       "worktrees",

@@ -8,6 +8,7 @@ export {
 } from "./core/auth";
 export {
   applyHarnessEvent,
+  applyHarnessEvents,
   appendUser,
   appendSteerUser,
   promoteLastAssistantToPlan,
@@ -197,6 +198,7 @@ export type {
   HarnessEvent,
   SteerTurnInput,
 } from "./core/types";
+export { TurnNotReadyError } from "./core/types";
 export type {
   UserQuestion,
   UserQuestionPrompt,
